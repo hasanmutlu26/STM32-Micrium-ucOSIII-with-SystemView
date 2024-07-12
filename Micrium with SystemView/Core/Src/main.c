@@ -21,6 +21,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "os.h"
 
 /* USER CODE END Includes */
 
@@ -31,7 +32,12 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define APP_TASK_BLINK_STK_SIZE 128		// Task's Stack Size
 
+
+#define APP_TASK_BLINK_BLUE_PRIO 5		// Blue LED Task priority
+#define APP_TASK_BLINK_GREEN_PRIO 4		// Green LED Task priority. Lower value is higher priority.
+#define APP_TASK_STARTER_PRIO 10
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -42,13 +48,29 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+/* Task Control Blocks */
+static OS_TCB AppTask1_TCB;
+static OS_TCB AppTask2_TCB;
+static OS_TCB AppTaskStarter_TCB;
 
+/* Task stacks. */
+static CPU_STK AppTask1Stk[APP_TASK_BLINK_STK_SIZE];
+static CPU_STK AppTask2Stk[APP_TASK_BLINK_STK_SIZE];
+static CPU_STK AppTaskStarterStk[APP_TASK_BLINK_STK_SIZE];
+
+/* A semaphore for broadcasting tasks to start. */
+static OS_SEM StartSem;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
 /* USER CODE BEGIN PFP */
+static void AppTask1(void *p_arg);
+static void AppTask2(void *p_arg);
+static void AppTaskStarter(void *p_arg);
 
+static void checkError(OS_ERR *err);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -63,7 +85,7 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-
+	OS_ERR err;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -83,7 +105,46 @@ int main(void)
   /* USER CODE END SysInit */
 
   /* Initialize all configured peripherals */
+  MX_GPIO_Init();
   /* USER CODE BEGIN 2 */
+
+  /* Initialize CPU */
+  CPU_Init();
+
+  /* Initialize the OS */
+  OSInit(&err);
+  checkError(&err);
+
+
+  /* Create task starter broadcaster semaphore */
+  OSSemCreate(&StartSem, "Start Semaphore", 1, &err);
+  checkError(&err);
+
+
+  /* Create starter wrapper task. */
+  OSTaskCreate((OS_TCB*) &AppTaskStarter_TCB,
+			(CPU_CHAR*) "App Task Start",
+			(OS_TASK_PTR) AppTaskStarter,
+			(void*) 0,
+			(OS_PRIO) APP_TASK_STARTER_PRIO,
+			(CPU_STK*) &AppTaskStarterStk[0],
+			(CPU_STK_SIZE) 0,
+			(CPU_STK_SIZE) APP_TASK_BLINK_STK_SIZE,
+			(OS_MSG_QTY) 0,
+			(OS_TICK) 0,
+			(void*) 0,
+			(OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR ),
+			(OS_ERR*) &err);
+	checkError(&err);
+
+
+
+
+
+
+  	/* Start OS */
+  	OSStart(&err);
+  	checkError(&err);
 
   /* USER CODE END 2 */
 
@@ -139,9 +200,167 @@ void SystemClock_Config(void)
   }
 }
 
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_0|GPIO_PIN_14|GPIO_PIN_7, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : PB0 PB14 PB7 */
+  GPIO_InitStruct.Pin = GPIO_PIN_0|GPIO_PIN_14|GPIO_PIN_7;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
+}
+
 /* USER CODE BEGIN 4 */
 
+/* A main wrapper task for starting the other task.
+ * This task initializes Systick and creates all other tasks. */
+static void AppTaskStarter(void *p_arg){
+	OS_ERR err;
+
+
+	/* Initialize Systick. This function has to be called after OSStart() call. */
+	OS_CPU_SysTickInit(SystemCoreClock / OS_CFG_TICK_RATE_HZ);
+
+
+	/* Create blink tasks. */
+	OSTaskCreate((OS_TCB*) &AppTask1_TCB,
+	  			(CPU_CHAR*) "App Task 1",
+	  			(OS_TASK_PTR) AppTask1,
+	  			(void*) 0,
+	  			(OS_PRIO) APP_TASK_BLINK_GREEN_PRIO,
+	  			(CPU_STK*) &AppTask1Stk[0],
+	  			(CPU_STK_SIZE) 0,
+	  			(CPU_STK_SIZE) APP_TASK_BLINK_STK_SIZE,
+	  			(OS_MSG_QTY) 0,
+	  			(OS_TICK) 0,
+	  			(void*) 0,
+	  			(OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR ),
+	  			(OS_ERR*) &err);
+	  	checkError(&err);
+
+	  	OSTaskCreate((OS_TCB*) &AppTask2_TCB,
+	  			(CPU_CHAR*) "App Task 2",
+	  			(OS_TASK_PTR) AppTask2,
+	  			(void*) 0,
+	  			(OS_PRIO) APP_TASK_BLINK_BLUE_PRIO,
+	  			(CPU_STK*) &AppTask2Stk[0],
+	  			(CPU_STK_SIZE) 0,
+	  			(CPU_STK_SIZE) APP_TASK_BLINK_STK_SIZE,
+	  			(OS_MSG_QTY) 0,
+	  			(OS_TICK) 0,
+	  			(void*) 0,
+	  			(OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR ),
+	  			(OS_ERR*) &err);
+	  	checkError(&err);
+
+
+	  	/* Broadcast all the tasks to start working. */
+	  	OSSemPost(&StartSem, OS_OPT_POST_ALL, &err);
+	  	checkError(&err);
+
+
+	  	while(1){
+
+	  	}
+}
+
+/* A high priority task that toggles Green LED.
+ * It is suspended for 5 seconds, preempts the other task when
+ * ready to run and keep the Green LED on for 3 seconds*/
+static void AppTask1(void *p_arg) {
+	OS_ERR err;
+	CPU_TS ts;
+
+
+	/* Waiting for all tasks to be created. */
+	OSSemPend(&StartSem, 0, OS_OPT_PEND_BLOCKING, &ts, &err);
+	checkError(&err);											// Check error
+
+
+
+	while (1){
+		OSTimeDlyHMSM(0, 0, 5, 0, OS_OPT_TIME_HMSM_STRICT, &err);	// Sleep for 5 seconds.
+		checkError(&err);											// Check error
+
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);						// Turn on the Green LED
+
+		HAL_Delay(3000);											// Keep the LED on.
+
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);						// Turn off the Green LED
+	}
+}
+
+/* A low priority task that toggles Blue LED.
+ * This task is always ready to run and blinks the blue LED.*/
+static void AppTask2(void *p_arg) {
+	OS_ERR err;
+	CPU_TS ts;
+
+	/* Waiting for all tasks to be created. */
+	OSSemPend(&StartSem, 0, OS_OPT_PEND_BLOCKING, &ts, &err);
+	checkError(&err);											// Check error
+
+	while (1) {
+		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);			// Toggle Blue LED
+
+		HAL_Delay(500);
+
+	}
+}
+
+
+/* This function checks the error code returned by OS services.*/
+/* If there is an error, the procedure doesn't continue and the red LED is blinking*/
+static void checkError(OS_ERR *err){
+	if (*err != OS_ERR_NONE) {
+		while (1) {
+			HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_14);
+			HAL_Delay(200);
+
+		}
+	}
+}
+
 /* USER CODE END 4 */
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM1 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM1) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
