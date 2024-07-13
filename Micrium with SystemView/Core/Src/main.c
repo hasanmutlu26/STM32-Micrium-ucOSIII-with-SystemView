@@ -116,12 +116,13 @@ int main(void)
   OSInit(&err);
   checkError(&err);
 
-	SEGGER_SYSVIEW_Conf();
-	SEGGER_SYSVIEW_Start();
+  SEGGER_SYSVIEW_Conf();
+  SEGGER_SYSVIEW_Start();
 
+  SEGGER_SYSVIEW_Print("SystemView Trace started.");
 
   /* Create task starter broadcaster semaphore */
-  OSSemCreate(&StartSem, "Start Semaphore", 1, &err);
+  OSSemCreate(&StartSem, "Start Semaphore", 0, &err);
   checkError(&err);
 
 
@@ -239,6 +240,8 @@ static void MX_GPIO_Init(void)
 static void AppTaskStarter(void *p_arg){
 	OS_ERR err;
 
+	SEGGER_SYSVIEW_Print("AppTaskStarter is started.");
+
 
 	/* Initialize Systick. This function has to be called after OSStart() call. */
 	OS_CPU_SysTickInit(SystemCoreClock / OS_CFG_TICK_RATE_HZ);
@@ -258,32 +261,38 @@ static void AppTaskStarter(void *p_arg){
 	  			(void*) 0,
 	  			(OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR ),
 	  			(OS_ERR*) &err);
-	  	checkError(&err);
-
-	  	OSTaskCreate((OS_TCB*) &AppTask2_TCB,
-	  			(CPU_CHAR*) "App Task 2",
-	  			(OS_TASK_PTR) AppTask2,
-	  			(void*) 0,
-	  			(OS_PRIO) APP_TASK_BLINK_BLUE_PRIO,
-	  			(CPU_STK*) &AppTask2Stk[0],
-	  			(CPU_STK_SIZE) 0,
-	  			(CPU_STK_SIZE) APP_TASK_BLINK_STK_SIZE,
-	  			(OS_MSG_QTY) 0,
-	  			(OS_TICK) 0,
-	  			(void*) 0,
-	  			(OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR ),
-	  			(OS_ERR*) &err);
-	  	checkError(&err);
+	checkError(&err);
 
 
-	  	/* Broadcast all the tasks to start working. */
-	  	OSSemPost(&StartSem, OS_OPT_POST_ALL, &err);
-	  	checkError(&err);
 
 
-	  	while(1){
+	OSTaskCreate((OS_TCB*) &AppTask2_TCB,
+			(CPU_CHAR*) "App Task 2",
+			(OS_TASK_PTR) AppTask2,
+			(void*) 0,
+			(OS_PRIO) APP_TASK_BLINK_BLUE_PRIO,
+			(CPU_STK*) &AppTask2Stk[0],
+			(CPU_STK_SIZE) 0,
+			(CPU_STK_SIZE) APP_TASK_BLINK_STK_SIZE,
+			(OS_MSG_QTY) 0,
+			(OS_TICK) 0,
+			(void*) 0,
+			(OS_OPT) (OS_OPT_TASK_STK_CHK | OS_OPT_TASK_STK_CLR ),
+			(OS_ERR*) &err);
+	checkError(&err);
 
-	  	}
+
+
+	SEGGER_SYSVIEW_Print("Tasks are created.");
+
+	/* Broadcast all the tasks to start working. */
+	OSSemPost(&StartSem, OS_OPT_POST_ALL, &err);
+	checkError(&err);
+
+
+	while(1){
+
+	}
 }
 
 /* A high priority task that toggles Green LED.
@@ -293,22 +302,31 @@ static void AppTask1(void *p_arg) {
 	OS_ERR err;
 	CPU_TS ts;
 
+	SEGGER_SYSVIEW_Print("AppTask1 is started.");
 
+
+	SEGGER_SYSVIEW_Print("Task1: Waiting on semaphore.");
 	/* Waiting for all tasks to be created. */
 	OSSemPend(&StartSem, 0, OS_OPT_PEND_BLOCKING, &ts, &err);
 	checkError(&err);											// Check error
 
+	SEGGER_SYSVIEW_Print("Task1: Ready.");
 
 
 	while (1){
+		SEGGER_SYSVIEW_Print("Task1: Going to suspend.");
 		OSTimeDlyHMSM(0, 0, 5, 0, OS_OPT_TIME_HMSM_STRICT, &err);	// Sleep for 5 seconds.
 		checkError(&err);											// Check error
 
+		SEGGER_SYSVIEW_Print("Task1: Ready.");
+
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);						// Turn on the Green LED
+		SEGGER_SYSVIEW_Print("Task1: Green LED turned on.");
 
 		HAL_Delay(3000);											// Keep the LED on.
 
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_0);						// Turn off the Green LED
+		SEGGER_SYSVIEW_Print("Task1: Green LED turned off.");
 	}
 }
 
@@ -318,12 +336,19 @@ static void AppTask2(void *p_arg) {
 	OS_ERR err;
 	CPU_TS ts;
 
+	SEGGER_SYSVIEW_Print("AppTask2 is started.");
+
+
+	SEGGER_SYSVIEW_Print("Task2: Waiting on semaphore.");
 	/* Waiting for all tasks to be created. */
 	OSSemPend(&StartSem, 0, OS_OPT_PEND_BLOCKING, &ts, &err);
 	checkError(&err);											// Check error
 
+	SEGGER_SYSVIEW_Print("Task2: Ready.");
+
 	while (1) {
 		HAL_GPIO_TogglePin(GPIOB, GPIO_PIN_7);			// Toggle Blue LED
+		SEGGER_SYSVIEW_Print("Task2: Blue LED is toggled..");
 
 		HAL_Delay(500);
 
