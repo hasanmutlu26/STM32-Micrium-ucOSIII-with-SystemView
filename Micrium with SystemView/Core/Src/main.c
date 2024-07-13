@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "os.h"
+#include "SEGGER_SYSVIEW.h"
 
 /* USER CODE END Includes */
 
@@ -114,6 +115,9 @@ int main(void)
   /* Initialize the OS */
   OSInit(&err);
   checkError(&err);
+
+	SEGGER_SYSVIEW_Conf();
+	SEGGER_SYSVIEW_Start();
 
 
   /* Create task starter broadcaster semaphore */

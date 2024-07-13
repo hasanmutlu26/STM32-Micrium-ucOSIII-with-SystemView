@@ -31,7 +31,7 @@
 #define OS_CFG_APP_HOOKS_EN                        1u           /* Enable (1) or Disable (0) application specific hooks                  */
 #define OS_CFG_ARG_CHK_EN                          1u           /* Enable (1) or Disable (0) argument checking                           */
 #define OS_CFG_CALLED_FROM_ISR_CHK_EN              1u           /* Enable (1) or Disable (0) check for called from ISR                   */
-#define OS_CFG_DBG_EN                              0u           /* Enable (1) or Disable (0) debug code/variables                        */
+#define OS_CFG_DBG_EN                              1u           /* Enable (1) or Disable (0) debug code/variables                        */
 #define OS_CFG_TICK_EN                             1u           /* Enable (1) or Disable (0) the kernel tick                             */
 #define OS_CFG_DYN_TICK_EN                         0u           /* Enable (1) or Disable (0) the Dynamic Tick                            */
 #define OS_CFG_INVALID_OS_CALLS_CHK_EN             1u           /* Enable (1) or Disable (0) checks for invalid kernel calls             */
@@ -112,8 +112,8 @@
 
 
                                                                 /* ------------------------- TRACE RECORDER ---------------------------- */
-#define OS_CFG_TRACE_EN                            0u           /* Enable (1) or Disable (0) uC/OS-III Trace instrumentation             */
-#define OS_CFG_TRACE_API_ENTER_EN                  0u           /* Enable (1) or Disable (0) uC/OS-III Trace API enter instrumentation   */
-#define OS_CFG_TRACE_API_EXIT_EN                   0u           /* Enable (1) or Disable (0) uC/OS-III Trace API exit  instrumentation   */
+#define OS_CFG_TRACE_EN                            1u           /* Enable (1) or Disable (0) uC/OS-III Trace instrumentation             */
+#define OS_CFG_TRACE_API_ENTER_EN                  1u           /* Enable (1) or Disable (0) uC/OS-III Trace API enter instrumentation   */
+#define OS_CFG_TRACE_API_EXIT_EN                   1u           /* Enable (1) or Disable (0) uC/OS-III Trace API exit  instrumentation   */
 
 #endif

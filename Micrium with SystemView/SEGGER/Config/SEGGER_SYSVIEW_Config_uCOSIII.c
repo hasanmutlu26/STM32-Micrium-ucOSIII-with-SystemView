@@ -54,7 +54,8 @@ Revision: $Rev: 9599 $
 */
 #include "SEGGER_SYSVIEW.h"
 #include "os.h"
-#include "bsp_clock.h"
+#include "stm32f4xx.h"
+//#include "bsp_clock.h"
 
 extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 
@@ -70,13 +71,13 @@ extern const SEGGER_SYSVIEW_OS_API SYSVIEW_X_OS_TraceAPI;
 // The target device name
 #define SYSVIEW_DEVICE_NAME     "Cortex-M Device"
 
-
+CPU_ERR local_err;
 
 // Frequency of the timestamp. Must match SEGGER_SYSVIEW_GET_TIMESTAMP in SEGGER_SYSVIEW_Conf.h
-#define SYSVIEW_TIMESTAMP_FREQ  (BSP_ClkFreqGet(BSP_CLK_ID_SYSCLK))
+#define SYSVIEW_TIMESTAMP_FREQ  (CPU_TS_TmrFreqGet(&local_err))
 
 // System Frequency. SystemcoreClock is used in most CMSIS compatible projects.
-#define SYSVIEW_CPU_FREQ        (BSP_ClkFreqGet(BSP_CLK_ID_SYSCLK))
+#define SYSVIEW_CPU_FREQ        (SystemCoreClock)
 
 // The lowest RAM address used for IDs (pointers)
 #define SYSVIEW_RAM_BASE        (0x20000000)
