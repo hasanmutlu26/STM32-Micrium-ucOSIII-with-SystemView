@@ -76,6 +76,8 @@ Related commit: [Micrium Integration Completed](https://github.com/hasanmutlu26/
 - An example LED blink program is implemented according to the multi-task application example from Getting Started section of the book.
 - It is very important to initialize SysTick with "OS_CPU_SysTickInit" function call. 
     + This function has to be called after the OSStart call, in other words, inside the starter task function.
+    + The argument to the function is number of clock ticks between each OS tick interrupt. For example, in order to achieve a period of 1ms, clock frequency value is divided by 1000 and given as argument.
+    + An alternative to this function is OS_CPU_SysTickInitFreq, where the CPU frequency is given as argument and the intended tick rate is specified via OS_CFG_TICK_RATE_HZ configuration constant in os_cfg.app.h file.
 - The program is verified both by debugger and observing blinking LEDs.
 <br/>
 
@@ -114,3 +116,10 @@ Related commit: [Configuration and First SystemView Integration](https://github.
     + A breakpoint is put in the first statement after SEGGER_SYSVIEW_Start() function call and the program is resumed.
     + When program stops in the breakpoint, SystemView real-time tracing is started and then the program is resumed.
 
+<br/>
+
+### Step 7: Capturing ISRs
+Related commit: [Interrupt Record Functionality Added](https://github.com/hasanmutlu26/STM32-Micrium-ucOSIII-with-SystemView/commit/d97a88736b18af54acb42aebe8de21e178a121a9#diff-5e5e5b336a54fbbccee93189b80630ace669bf72165dce8f6d6e3cd740faedd0)
+
++ In order to record interrupts, SEGGER_SYSVIEW_RecordEnterISR() and SEGGER_SYSVIEW_RecordExitISR() calls need to be added to the beginning and ending of the interrupt handler function.
+    - It is tested by creating a simple user button interrupt. 
