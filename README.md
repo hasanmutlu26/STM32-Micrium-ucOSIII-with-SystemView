@@ -28,7 +28,7 @@
 
 ## __Integration Steps__
 
-The integration is committed into the repository step by step, with instructions and explanations given in each commit. You can take a look at the related commit alongside.
+The integration is committed into the repository step by step, with instructions and explanations given in each commit. While reading these steps, you can review the related commit alongside.
 
 
 ### Step 1: Creating Project
@@ -40,13 +40,12 @@ Related commits: [Default Project Created](https://github.com/hasanmutlu26/STM32
 
 ### Step 2: Adding Micrium Source Code to Project
 Related commit: [Micrium Source Code Added](https://github.com/hasanmutlu26/STM32-Micrium-ucOSIII-with-SystemView/commit/18bc317e2e8c990fed6d6fabe1de50ccd88b40df)
-- The file structure I followed is different than the recommended structure in the book.
+- The file structure followed is different than the recommended structure in the book.
 - A folder named Micrium is created. Three new folders are created for each three source code repositories.
 - Source codes from uC-CPU, uC-LIB and uC-OS3 are copied to their respective folders. uC-OS3 source code is inside the "Source" directory.
 - There are CPU-specific port codes in each repositories. The appropriate port codes from each source are selected copied into their respective folders. 
 - There are configuration header file templates in each three repositories. These files are placed in folders called "Cfg" inside the source repositories. A seperate folder called "Cfg" is created inside the Micrium folder and these configuration files are copied into it. 
-- All of the new source code paths are added to include paths in project settings.
-- Micrium folder is included to the build.
+- All of the new source code paths are added to source and include paths in project settings.
 
 
 <br/>
@@ -56,6 +55,8 @@ Related commit: [Micrium Integration Completed](https://github.com/hasanmutlu26/
 
 - First of all, the _dbg_uCOS-III.c file is deleted from Micrium/uC-OS3/Source
 - Configurations are made in cpu_cfg and lib_cfg files, according to both user application and tracing needs. Timestamping has to be enabled for tracing.
+    + CPU_CFG_NVIC_PRIO_BITS configuration constant must be configured according to the reference manual. It determines number of bits used by the microcontroller for interrupt priorities. It is defined in "Nested vectored interrupt controller" chapter in reference manual. For this project, it needs to be 4. 
+- Timebase source has to be changed to TIMx. In default, it is selected as SysTick when the project is first created. It is changed to TIM1.
 
 #### Step 3.1: Including BSP
 - When timestamping and interrupt disabled time measurements are enabled, some user defined BSP code is needed. More specifically, CPU_TS_TmrInit() function.
@@ -63,12 +64,12 @@ Related commit: [Micrium Integration Completed](https://github.com/hasanmutlu26/
     + The official examples in the Weston-Embedded website and BSP codes in them are investigated. 
     + In the STM3240G-EVAL example project, CPU_TS_TmrInit() function is found in cpu_bsp.c file. Entire file is copied into a new BSP folder.
     + BSP_CPU_ClkFreq() function is also needed. It is found in bsp.c file and copied into the cpu_bsp.c. It is a function that simply returns the SystemCoreClock value.
-    + HAL header is included in cpu_bsp.c
+    + HAL library header is included in cpu_bsp.c
     + Source of example project: https://www.weston-embedded.com/micrium-examples/category/240-stm3240g-eval
 
 #### Step 3.2: Including Micrium's Handlers
 - Micrium's own PendSV and SysTick interrupt handlers need to be used.
-    + The startup assembly file startup_xxxx.s is modified and Micrium's handlers are added to the vector table: 
+    + The startup assembly file startup_stm32f4...s is modified and Micrium's handlers are added to the vector table: 
     + All occurances of PendSV_Handler are replaced with OS_CPU_PendSVHandler.
     + All occurances of SysTick_Handler are replaced with OS_CPU_SysTickHandler.
 
@@ -77,7 +78,7 @@ Related commit: [Micrium Integration Completed](https://github.com/hasanmutlu26/
 - It is very important to initialize SysTick with "OS_CPU_SysTickInit" function call. 
     + This function has to be called after the OSStart call, in other words, inside the starter task function.
     + The argument to the function is number of clock ticks between each OS tick interrupt. For example, in order to achieve a period of 1ms, clock frequency value is divided by 1000 and given as argument.
-    + An alternative to this function is OS_CPU_SysTickInitFreq, where the CPU frequency is given as argument and the intended tick rate is specified via OS_CFG_TICK_RATE_HZ configuration constant in os_cfg.app.h file.
+    + An alternative to this function is OS_CPU_SysTickInitFreq, where the CPU frequency is given as argument and the intended tick rate is specified via OS_CFG_TICK_RATE_HZ configuration constant in os_cfg_app.h file.
 - The program is verified both by debugger and observing blinking LEDs.
 <br/>
 
