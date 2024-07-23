@@ -56,7 +56,7 @@ Related commit: [Micrium Integration Completed](https://github.com/hasanmutlu26/
 - First of all, the _dbg_uCOS-III.c file is deleted from Micrium/uC-OS3/Source
 - Configurations are made in cpu_cfg and lib_cfg files, according to both user application and tracing needs. Timestamping has to be enabled for tracing.
     + CPU_CFG_NVIC_PRIO_BITS configuration constant must be configured according to the reference manual. It determines number of bits used by the microcontroller for interrupt priorities. It is defined in "Nested vectored interrupt controller" chapter in reference manual. For this project, it needs to be 4. 
-- Timebase source has to be changed to TIMx. In default, it is selected as SysTick when the project is first created. It is changed to TIM1.
+- Timebase source has to be changed to TIMx. In default, it is selected as SysTick when the project is first created. It is changed to TIM1 using System Core->SYS->Timebase Source path on CubeMX.
 
 #### Step 3.1: Including BSP
 - When timestamping and interrupt disabled time measurements are enabled, some user defined BSP code is needed. More specifically, CPU_TS_TmrInit() function.
